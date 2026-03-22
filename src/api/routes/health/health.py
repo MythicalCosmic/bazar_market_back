@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from helpers.helpers import return_releaseId
+from src.helpers.helpers import return_releaseId
 
 
 app = APIRouter()
