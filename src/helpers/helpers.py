@@ -1,6 +1,7 @@
 import hashlib
 from dotenv import load_dotenv
 import os
+from datetime import datetime, timezone
 
 load_dotenv(override=True)
 
@@ -13,3 +14,8 @@ def return_releaseId() -> str:
     hex_dig = hash_object.hexdigest()
 
     return hex_dig
+
+
+def return_timestamps() -> str:
+    current_utc_time = datetime.now(timezone.utc)
+    return current_utc_time

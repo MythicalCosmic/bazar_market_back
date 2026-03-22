@@ -170,6 +170,7 @@ dependencies = [
     { name = "boundless-aiogram" },
     { name = "dotenv" },
     { name = "fastapi" },
+    { name = "starlette" },
     { name = "uvicorn" },
 ]
 
@@ -178,6 +179,7 @@ requires-dist = [
     { name = "boundless-aiogram", specifier = ">=2.0.0" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "fastapi", specifier = ">=0.135.1" },
+    { name = "starlette", specifier = ">=1.0.0" },
     { name = "uvicorn", specifier = ">=0.34.0" },
 ]
 

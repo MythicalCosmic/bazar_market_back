@@ -8,5 +8,6 @@ dependencies = [
     "boundless-aiogram>=2.0.0",
     "dotenv>=0.9.9",
     "fastapi>=0.135.1",
+    "starlette>=1.0.0",
     "uvicorn>=0.34.0",
 ]
