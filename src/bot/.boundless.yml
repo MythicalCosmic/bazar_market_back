@@ -1,0 +1,6 @@
+project_name: bot
+template: default
+server_mode: both
+database: sqlalchemy
+use_migrations: true
+extras: [rate_limiting, redis, i18n]

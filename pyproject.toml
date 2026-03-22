@@ -1,0 +1,10 @@
+[project]
+name = "bazar-market-back"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "boundless-aiogram>=2.0.0",
+    "fastapi>=0.135.1",
+]

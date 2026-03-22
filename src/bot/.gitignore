@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.db
+.venv/
+venv/
+.env
+migrations/versions/
+.DS_Store
+Thumbs.db
+logs/*.log
+*.egg-info/
+dist/
+build/
