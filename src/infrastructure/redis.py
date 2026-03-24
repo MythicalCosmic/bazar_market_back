@@ -1,12 +1,15 @@
+import os
 import json
 from redis.asyncio import Redis, ConnectionPool
-from src.infrastructure.config import settings
 
-pool = ConnectionPool.from_url(settings.redis_url)
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
+REDIS_DB = os.environ.get("REDIS_DATABASE", "0")
+
+pool = ConnectionPool.from_url(REDIS_URL)
 
 
 async def get_redis() -> Redis:
-    return Redis(connection_pool=pool, db=settings.redis_database)
+    return Redis(connection_pool=pool, db=REDIS_DB)
 
 
 class RedisCache:
