@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     redis_url: str = os.getenv('REDIS_URL')
     redis_database: str = os.getenv('REDIS_DATABASE')
 
+    # JWT
+    JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-in-production")
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TTL: int = int(os.getenv("JWT_ACCESS_TTL", "3600"))       # 1 hour
+    JWT_REFRESH_TTL: int = int(os.getenv("JWT_REFRESH_TTL", "604800"))   # 7 days
+
 
     @property
     def database_url(self) -> str:
