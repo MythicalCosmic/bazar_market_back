@@ -32,6 +32,8 @@ services:
       POSTGRES_DB: bazar_market
       REDIS_URL: redis://:redis_password@redis:6379
       REDIS_DATABASE: "0"
+      SESSION_SECRET: super-secret-change-me
+      SESSION_TTL: "86400"
     depends_on:
       - db
       - redis

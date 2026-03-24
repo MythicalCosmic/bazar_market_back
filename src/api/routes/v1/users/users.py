@@ -4,23 +4,22 @@ from fastapi import APIRouter, Depends, Query
 
 from src.core.dto.user import (
     UserCreateDTO, UserUpdateDTO, UserDTO, UserListDTO,
-    AddressCreateDTO, AddressUpdateDTO, AddressDTO,
+    AdminCreateDTO, AddressDTO,
 )
 from src.core.enums import UserRole
 from src.core.services.user_service import UserService
-from src.api.dependencies import get_current_admin, get_cache
-from src.infrastructure.di import get_user_service
+from src.core.services.auth_service import AuthService
+from src.api.dependencies import get_current_admin
+from src.infrastructure.di import get_user_service, get_auth_service, get_cache
 from src.infrastructure.redis import RedisCache
 
 router = APIRouter()
 
 
-# ═══════════════════════════════════════════════
-#  ADMIN ROUTES — JWT protected, full access
-# ═══════════════════════════════════════════════
+# ── List / Filter / Search ──
 
 @router.get("/", response_model=list[UserListDTO])
-async def admin_list_users(
+async def list_users(
     _: UserDTO = Depends(get_current_admin),
     service: UserService = Depends(get_user_service),
     cache: RedisCache = Depends(get_cache),
@@ -36,7 +35,7 @@ async def admin_list_users(
 
 
 @router.get("/role/{role}", response_model=list[UserListDTO])
-async def admin_list_by_role(
+async def list_by_role(
     role: UserRole,
     _: UserDTO = Depends(get_current_admin),
     service: UserService = Depends(get_user_service),
@@ -53,7 +52,7 @@ async def admin_list_by_role(
 
 
 @router.get("/active", response_model=list[UserListDTO])
-async def admin_list_active(
+async def list_active(
     _: UserDTO = Depends(get_current_admin),
     service: UserService = Depends(get_user_service),
     cache: RedisCache = Depends(get_cache),
@@ -69,7 +68,7 @@ async def admin_list_active(
 
 
 @router.get("/count")
-async def admin_user_count(
+async def user_count(
     _: UserDTO = Depends(get_current_admin),
     service: UserService = Depends(get_user_service),
     cache: RedisCache = Depends(get_cache),
@@ -83,8 +82,10 @@ async def admin_user_count(
     return result
 
 
+# ── Create ──
+
 @router.post("/", response_model=UserDTO, status_code=201)
-async def admin_create_user(
+async def create_user(
     dto: UserCreateDTO,
     _: UserDTO = Depends(get_current_admin),
     service: UserService = Depends(get_user_service),
@@ -95,8 +96,24 @@ async def admin_create_user(
     return user
 
 
+@router.post("/admin", response_model=UserDTO, status_code=201)
+async def create_admin(
+    dto: AdminCreateDTO,
+    _: UserDTO = Depends(get_current_admin),
+    service: UserService = Depends(get_user_service),
+    auth_service: AuthService = Depends(get_auth_service),
+    cache: RedisCache = Depends(get_cache),
+):
+    password_hash = auth_service.hash_password(dto.password)
+    user = await service.create_admin(dto, password_hash)
+    await cache.delete_pattern("users:*")
+    return user
+
+
+# ── Get / Update / Delete ──
+
 @router.get("/{user_id}", response_model=UserDTO)
-async def admin_get_user(
+async def get_user(
     user_id: int,
     _: UserDTO = Depends(get_current_admin),
     service: UserService = Depends(get_user_service),
@@ -111,7 +128,7 @@ async def admin_get_user(
 
 
 @router.patch("/{user_id}", response_model=UserDTO)
-async def admin_update_user(
+async def update_user(
     user_id: int,
     dto: UserUpdateDTO,
     _: UserDTO = Depends(get_current_admin),
@@ -120,12 +137,13 @@ async def admin_update_user(
 ):
     user = await service.update_user(user_id, dto)
     await cache.delete(f"user:{user_id}")
+    await cache.delete(f"admin:session:{user_id}")
     await cache.delete_pattern("users:*")
     return user
 
 
 @router.delete("/{user_id}")
-async def admin_delete_user(
+async def delete_user(
     user_id: int,
     _: UserDTO = Depends(get_current_admin),
     service: UserService = Depends(get_user_service),
@@ -133,12 +151,15 @@ async def admin_delete_user(
 ):
     await service.delete_user(user_id)
     await cache.delete(f"user:{user_id}")
+    await cache.delete(f"admin:session:{user_id}")
     await cache.delete_pattern("users:*")
     return {"detail": "User deleted"}
 
 
+# ── Actions ──
+
 @router.post("/{user_id}/balance")
-async def admin_adjust_balance(
+async def adjust_balance(
     user_id: int,
     amount: Decimal = Query(...),
     _: UserDTO = Depends(get_current_admin),
@@ -151,7 +172,7 @@ async def admin_adjust_balance(
 
 
 @router.post("/{user_id}/deactivate")
-async def admin_deactivate_user(
+async def deactivate_user(
     user_id: int,
     _: UserDTO = Depends(get_current_admin),
     service: UserService = Depends(get_user_service),
@@ -159,12 +180,28 @@ async def admin_deactivate_user(
 ):
     await service.deactivate_user(user_id)
     await cache.delete(f"user:{user_id}")
+    await cache.delete(f"admin:session:{user_id}")
     await cache.delete_pattern("users:*")
     return {"detail": "User deactivated"}
 
 
+@router.post("/{user_id}/verify")
+async def verify_user(
+    user_id: int,
+    _: UserDTO = Depends(get_current_admin),
+    service: UserService = Depends(get_user_service),
+    cache: RedisCache = Depends(get_cache),
+):
+    await service.verify_user(user_id)
+    await cache.delete(f"user:{user_id}")
+    await cache.delete_pattern("users:*")
+    return {"detail": "User verified"}
+
+
+# ── Addresses ──
+
 @router.get("/{user_id}/addresses", response_model=list[AddressDTO])
-async def admin_get_user_addresses(
+async def get_user_addresses(
     user_id: int,
     _: UserDTO = Depends(get_current_admin),
     service: UserService = Depends(get_user_service),

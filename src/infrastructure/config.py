@@ -1,6 +1,5 @@
 import os
 from dotenv import load_dotenv
-from redis.asyncio import Redis, ConnectionPool
 from pydantic_settings import BaseSettings
 
 load_dotenv(override=False)
@@ -13,16 +12,13 @@ class Settings(BaseSettings):
     POSTGRES_PORT: str = os.getenv("POSTGRES_PORT", "5432")
     POSTGRES_DB: str = os.getenv("POSTGRES_DB", "bazar_market")
 
-    #Redis connection pool
+    # Redis
     redis_url: str = os.getenv('REDIS_URL')
     redis_database: str = os.getenv('REDIS_DATABASE')
 
-    # JWT
-    JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me-in-production")
-    JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TTL: int = int(os.getenv("JWT_ACCESS_TTL", "3600"))       # 1 hour
-    JWT_REFRESH_TTL: int = int(os.getenv("JWT_REFRESH_TTL", "604800"))   # 7 days
-
+    # Session
+    SESSION_SECRET: str = os.getenv("SESSION_SECRET", "change-me-in-production")
+    SESSION_TTL: int = int(os.getenv("SESSION_TTL", "86400"))  # 24 hours
 
     @property
     def database_url(self) -> str:
@@ -37,9 +33,6 @@ class Settings(BaseSettings):
             f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
-    
-    
-
 
 
 settings = Settings()

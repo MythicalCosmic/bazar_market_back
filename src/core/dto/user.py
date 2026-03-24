@@ -4,6 +4,7 @@ from decimal import Decimal
 from pydantic import BaseModel, Field
 
 
+# ── User ──
 
 class UserCreateDTO(BaseModel):
     telegram_id: int | None = None
@@ -13,6 +14,13 @@ class UserCreateDTO(BaseModel):
     phone: str | None = Field(None, max_length=20)
     role: str = Field("client", max_length=20)
     language: str = Field("uz", max_length=5)
+
+
+class AdminCreateDTO(BaseModel):
+    username: str = Field(..., max_length=100)
+    first_name: str = Field(..., max_length=100)
+    last_name: str | None = Field(None, max_length=100)
+    password: str = Field(..., min_length=6)
 
 
 class UserUpdateDTO(BaseModel):
@@ -34,6 +42,7 @@ class UserDTO(BaseModel):
     balance: Decimal
     role: str
     language: str
+    is_verified: bool
     is_active: bool
     last_seen_at: datetime | None
     created_at: datetime
@@ -50,12 +59,14 @@ class UserListDTO(BaseModel):
     last_name: str | None
     phone: str | None
     role: str
+    is_verified: bool
     is_active: bool
     last_seen_at: datetime | None
 
     model_config = {"from_attributes": True}
 
 
+# ── Address ──
 
 class AddressCreateDTO(BaseModel):
     label: str | None = Field(None, max_length=100)

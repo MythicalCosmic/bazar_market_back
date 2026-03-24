@@ -1,37 +1,37 @@
-from fastapi import Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from redis.asyncio import Redis
+from fastapi import Depends, Header
 
 from src.core.enums import UserRole
 from src.core.exceptions import ForbiddenException
 from src.core.dto.user import UserDTO
 from src.core.services.auth_service import AuthService
 from src.core.services.user_service import UserService
-from src.infrastructure.di import get_user_service, get_auth_service
-from src.infrastructure.redis import get_redis, RedisCache
-
-bearer_scheme = HTTPBearer()
-
-
-async def get_cache(redis: Redis = Depends(get_redis)) -> RedisCache:
-    return RedisCache(redis)
+from src.infrastructure.di import get_user_service, get_auth_service, get_cache
+from src.infrastructure.redis import RedisCache
 
 
 async def get_current_admin(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    authorization: str = Header(...),
     auth_service: AuthService = Depends(get_auth_service),
     user_service: UserService = Depends(get_user_service),
+    cache: RedisCache = Depends(get_cache),
 ) -> UserDTO:
-    payload = auth_service.decode_token(credentials.credentials)
-    if payload.get("type") != "access":
-        raise ForbiddenException("Invalid access token")
+    if not authorization.startswith("Bearer "):
+        raise ForbiddenException("Invalid authorization header")
 
-    user_id = int(payload["sub"])
-    user = await user_service.get_user(user_id)
+    token = authorization[7:]
+    session = await auth_service.validate_session(token)
+    user_id = session["user_id"]
+
+    cached_user = await cache.get(f"admin:session:{user_id}")
+    if cached_user:
+        user = UserDTO.model_validate(cached_user)
+    else:
+        user = await user_service.get_user(user_id)
+        await cache.set(f"admin:session:{user_id}", user.model_dump(), ttl=300)
 
     if not user.is_active:
         raise ForbiddenException("Account is deactivated")
-    if user.role != UserRole.ADMIN:
+    if user.role not in (UserRole.ADMIN, UserRole.MANAGER):
         raise ForbiddenException("Admin access required")
 
     await user_service.touch_last_seen(user_id)

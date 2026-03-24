@@ -20,6 +20,8 @@ class User(UUIDMixin, TimestampMixin, SoftDeleteMixin, Base):
     balance: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("0"))
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="client")
     language: Mapped[str] = mapped_column(String(5), default="uz")
+    password_hash: Mapped[str | None] = mapped_column(String(255))
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

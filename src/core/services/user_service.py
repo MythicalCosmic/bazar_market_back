@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from src.core.dto.user import (
     UserCreateDTO, UserUpdateDTO, UserDTO, UserListDTO,
-    AddressCreateDTO, AddressUpdateDTO, AddressDTO,
+    AdminCreateDTO, AddressCreateDTO, AddressUpdateDTO, AddressDTO,
 )
 from src.core.enums import UserRole
 from src.core.exceptions import NotFoundException, AlreadyExistsException
@@ -27,6 +27,21 @@ class UserService:
         referral_code = secrets.token_urlsafe(8)
         user = await self.user_repo.create(
             **dto.model_dump(exclude_unset=True),
+            referral_code=referral_code,
+        )
+        return UserDTO.model_validate(user)
+
+    async def create_admin(self, dto: AdminCreateDTO, password_hash: str) -> UserDTO:
+        if await self.user_repo.get_by_username(dto.username):
+            raise AlreadyExistsException("User", "username", dto.username)
+
+        referral_code = secrets.token_urlsafe(8)
+        user = await self.user_repo.create(
+            username=dto.username,
+            first_name=dto.first_name,
+            last_name=dto.last_name,
+            password_hash=password_hash,
+            role=UserRole.ADMIN,
             referral_code=referral_code,
         )
         return UserDTO.model_validate(user)
@@ -90,6 +105,13 @@ class UserService:
         deactivated = await self.user_repo.deactivate(user_id)
         if not deactivated:
             raise NotFoundException("User", user_id)
+        return True
+
+    async def verify_user(self, user_id: int) -> bool:
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise NotFoundException("User", user_id)
+        await self.user_repo.update_by_id(user_id, is_verified=True)
         return True
 
     async def touch_last_seen(self, user_id: int) -> None:
