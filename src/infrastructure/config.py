@@ -1,24 +1,19 @@
 import os
-from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
-
-load_dotenv(override=False)
 
 
 class Settings(BaseSettings):
-    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "bazar")
-    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "bazar")
-    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")
-    POSTGRES_PORT: str = os.getenv("POSTGRES_PORT", "5432")
-    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "bazar_market")
+    POSTGRES_USER: str = os.environ.get("POSTGRES_USER", "bazar")
+    POSTGRES_PASSWORD: str = os.environ.get("POSTGRES_PASSWORD", "bazar")
+    POSTGRES_HOST: str = os.environ.get("POSTGRES_HOST", "localhost")
+    POSTGRES_PORT: str = os.environ.get("POSTGRES_PORT", "5432")
+    POSTGRES_DB: str = os.environ.get("POSTGRES_DB", "bazar_market")
 
-    # Redis
-    redis_url: str = os.getenv('REDIS_URL')
-    redis_database: str = os.getenv('REDIS_DATABASE')
+    redis_url: str = os.environ.get("REDIS_URL", "redis://localhost:6379")
+    redis_database: str = os.environ.get("REDIS_DATABASE", "0")
 
-    # Session
-    SESSION_SECRET: str = os.getenv("SESSION_SECRET", "change-me-in-production")
-    SESSION_TTL: int = int(os.getenv("SESSION_TTL", "86400"))  # 24 hours
+    SESSION_SECRET: str = os.environ.get("SESSION_SECRET", "change-me-in-production")
+    SESSION_TTL: int = int(os.environ.get("SESSION_TTL", "86400"))
 
     @property
     def database_url(self) -> str:
