@@ -11,6 +11,14 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+    - "6379:6379"
+    volumes:
+    - redis_data:/data
+    command: redis-server --appendonly yes --requirepass redis_password
   api:
     build: .
     ports:
@@ -22,9 +30,13 @@ services:
       POSTGRES_USER: bazar
       POSTGRES_PASSWORD: bazar
       POSTGRES_DB: bazar_market
+      REDIS_URL: redis://:redis_password@redis:6379
+      REDIS_DATABASE: "0"
     depends_on:
       - db
+      - redis
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
   pgdata:
+  redis_data:
