@@ -5,6 +5,11 @@ Run inside Docker:
     docker compose exec api python scripts/seed_admin.py
 """
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import asyncio
 import secrets
 
