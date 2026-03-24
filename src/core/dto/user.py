@@ -4,7 +4,7 @@ from decimal import Decimal
 from pydantic import BaseModel, Field
 
 
-# ── User ──
+# ── User (admin view) ──
 
 class UserCreateDTO(BaseModel):
     telegram_id: int | None = None
@@ -21,6 +21,7 @@ class AdminCreateDTO(BaseModel):
     first_name: str = Field(..., max_length=100)
     last_name: str | None = Field(None, max_length=100)
     password: str = Field(..., min_length=6)
+    permissions: list[str] = []
 
 
 class UserUpdateDTO(BaseModel):
@@ -42,6 +43,7 @@ class UserDTO(BaseModel):
     balance: Decimal
     role: str
     language: str
+    permissions: list[str] = []
     is_verified: bool
     is_active: bool
     last_seen_at: datetime | None
@@ -59,11 +61,36 @@ class UserListDTO(BaseModel):
     last_name: str | None
     phone: str | None
     role: str
+    permissions: list[str] = []
     is_verified: bool
     is_active: bool
     last_seen_at: datetime | None
 
     model_config = {"from_attributes": True}
+
+
+# ── Customer (own view) ──
+
+class CustomerProfileDTO(BaseModel):
+    id: int
+    telegram_id: int | None
+    username: str | None
+    first_name: str
+    last_name: str | None
+    phone: str | None
+    balance: Decimal
+    language: str
+    is_verified: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class CustomerProfileUpdateDTO(BaseModel):
+    first_name: str | None = Field(None, max_length=100)
+    last_name: str | None = Field(None, max_length=100)
+    phone: str | None = Field(None, max_length=20)
+    language: str | None = Field(None, max_length=5)
 
 
 # ── Address ──

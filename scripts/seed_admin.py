@@ -1,8 +1,8 @@
 """
-Seed the first admin user.
+Seed the first admin user with all permissions.
 
 Run inside Docker:
-    docker compose exec api python scripts/seed_admin.py
+    docker compose exec api bash -c "PYTHONPATH=/app python scripts/seed_admin.py"
 """
 
 import sys
@@ -18,6 +18,7 @@ from sqlalchemy import select
 
 from src.db.session import async_session
 from src.db.models.user import User
+from src.core.enums import AdminPermission
 
 
 ADMIN_USERNAME = "admin"
@@ -43,6 +44,7 @@ async def main():
             last_name=ADMIN_LAST_NAME,
             password_hash=password_hash,
             role="admin",
+            permissions=AdminPermission.all(),
             referral_code=secrets.token_urlsafe(8),
             is_verified=True,
             is_active=True,
@@ -50,6 +52,7 @@ async def main():
         session.add(admin)
         await session.commit()
         print(f"Admin created: username={ADMIN_USERNAME}, password={ADMIN_PASSWORD}")
+        print(f"Permissions: {AdminPermission.all()}")
 
 
 if __name__ == "__main__":

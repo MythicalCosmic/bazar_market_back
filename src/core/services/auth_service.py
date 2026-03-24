@@ -4,7 +4,7 @@ import bcrypt
 
 from src.core.dto.auth import AdminLoginDTO, SessionDTO
 from src.core.enums import UserRole
-from src.core.exceptions import ForbiddenException, NotFoundException
+from src.core.exceptions import ForbiddenException
 from src.core.interfaces.user_interface import IUserRepository
 from src.infrastructure.config import settings
 from src.infrastructure.redis import RedisCache
@@ -27,9 +27,16 @@ class AuthService:
             raise ForbiddenException("No password set for this account")
         if not self.verify_password(dto.password, user.password_hash):
             raise ForbiddenException("Invalid credentials")
+        if not user.is_active:
+            raise ForbiddenException("Account is deactivated")
 
         session_token = secrets.token_urlsafe(48)
-        session_data = {"user_id": user.id, "role": user.role}
+        permissions = user.permissions or []
+        session_data = {
+            "user_id": user.id,
+            "role": user.role,
+            "permissions": permissions,
+        }
         await self.cache.set(
             f"{self.SESSION_PREFIX}{session_token}",
             session_data,
@@ -40,6 +47,7 @@ class AuthService:
             session_token=session_token,
             user_id=user.id,
             role=user.role,
+            permissions=permissions,
             expires_in=settings.SESSION_TTL,
         )
 

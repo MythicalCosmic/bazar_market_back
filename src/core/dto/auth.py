@@ -10,4 +10,5 @@ class SessionDTO(BaseModel):
     session_token: str
     user_id: int
     role: str
+    permissions: list[str] = []
     expires_in: int

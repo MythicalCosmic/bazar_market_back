@@ -8,7 +8,7 @@ from src.infrastructure.di import get_auth_service
 router = APIRouter()
 
 
-@router.post("/admin/login", response_model=SessionDTO)
+@router.post("/login", response_model=SessionDTO)
 async def admin_login(
     dto: AdminLoginDTO,
     auth_service: AuthService = Depends(get_auth_service),
@@ -16,7 +16,7 @@ async def admin_login(
     return await auth_service.admin_login(dto)
 
 
-@router.post("/admin/logout")
+@router.post("/logout")
 async def admin_logout(
     authorization: str = Header(...),
     auth_service: AuthService = Depends(get_auth_service),

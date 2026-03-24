@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import String, BigInteger, Boolean, Index, DateTime, Text, Numeric, ForeignKey
+from sqlalchemy import String, BigInteger, Boolean, Index, DateTime, Text, Numeric, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base, TimestampMixin, SoftDeleteMixin, UUIDMixin
@@ -21,6 +21,7 @@ class User(UUIDMixin, TimestampMixin, SoftDeleteMixin, Base):
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="client")
     language: Mapped[str] = mapped_column(String(5), default="uz")
     password_hash: Mapped[str | None] = mapped_column(String(255))
+    permissions: Mapped[list | None] = mapped_column(JSON, default=list)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -3,7 +3,8 @@ from decimal import Decimal
 
 from src.core.dto.user import (
     UserCreateDTO, UserUpdateDTO, UserDTO, UserListDTO,
-    AdminCreateDTO, AddressCreateDTO, AddressUpdateDTO, AddressDTO,
+    AdminCreateDTO, CustomerProfileDTO, CustomerProfileUpdateDTO,
+    AddressCreateDTO, AddressUpdateDTO, AddressDTO,
 )
 from src.core.enums import UserRole
 from src.core.exceptions import NotFoundException, AlreadyExistsException
@@ -15,6 +16,7 @@ class UserService:
         self.user_repo = user_repo
         self.address_repo = address_repo
 
+    # ── Admin operations ──
 
     async def create_user(self, dto: UserCreateDTO) -> UserDTO:
         if dto.telegram_id and await self.user_repo.get_by_telegram_id(dto.telegram_id):
@@ -42,7 +44,9 @@ class UserService:
             last_name=dto.last_name,
             password_hash=password_hash,
             role=UserRole.ADMIN,
+            permissions=dto.permissions,
             referral_code=referral_code,
+            is_verified=True,
         )
         return UserDTO.model_validate(user)
 
@@ -84,7 +88,6 @@ class UserService:
             raise NotFoundException("User", user_id)
         return True
 
-
     async def list_users(self, *, offset: int = 0, limit: int = 100) -> list[UserListDTO]:
         users = await self.user_repo.get_all(offset=offset, limit=limit)
         return [UserListDTO.model_validate(u) for u in users]
@@ -100,7 +103,6 @@ class UserService:
     async def count_users(self) -> int:
         return await self.user_repo.count()
 
-
     async def deactivate_user(self, user_id: int) -> bool:
         deactivated = await self.user_repo.deactivate(user_id)
         if not deactivated:
@@ -113,6 +115,12 @@ class UserService:
             raise NotFoundException("User", user_id)
         await self.user_repo.update_by_id(user_id, is_verified=True)
         return True
+
+    async def update_permissions(self, user_id: int, permissions: list[str]) -> UserDTO:
+        user = await self.user_repo.update_by_id(user_id, permissions=permissions)
+        if not user:
+            raise NotFoundException("User", user_id)
+        return UserDTO.model_validate(user)
 
     async def touch_last_seen(self, user_id: int) -> None:
         await self.user_repo.touch_last_seen(user_id)
@@ -129,11 +137,37 @@ class UserService:
             raise NotFoundException("User", code)
         return UserDTO.model_validate(user)
 
+    # ── Customer operations ──
+
+    async def get_customer_profile(self, telegram_id: int) -> CustomerProfileDTO:
+        user = await self.user_repo.get_by_telegram_id(telegram_id)
+        if not user:
+            raise NotFoundException("User", telegram_id)
+        return CustomerProfileDTO.model_validate(user)
+
+    async def update_customer_profile(self, telegram_id: int, dto: CustomerProfileUpdateDTO) -> CustomerProfileDTO:
+        user = await self.user_repo.get_by_telegram_id(telegram_id)
+        if not user:
+            raise NotFoundException("User", telegram_id)
+
+        data = dto.model_dump(exclude_unset=True)
+        if not data:
+            return CustomerProfileDTO.model_validate(user)
+
+        if "phone" in data and data["phone"]:
+            existing = await self.user_repo.get_by_phone(data["phone"])
+            if existing and existing.id != user.id:
+                raise AlreadyExistsException("User", "phone", data["phone"])
+
+        updated = await self.user_repo.update_by_id(user.id, **data)
+        return CustomerProfileDTO.model_validate(updated)
+
+    # ── Address operations ──
 
     async def create_address(self, user_id: int, dto: AddressCreateDTO) -> AddressDTO:
         await self._ensure_user_exists(user_id)
         if dto.is_default:
-            await self.address_repo.set_default(user_id, -1)  # unset all
+            await self.address_repo.set_default(user_id, -1)
         address = await self.address_repo.create(user_id=user_id, **dto.model_dump())
         if dto.is_default:
             await self.address_repo.set_default(user_id, address.id)
@@ -167,7 +201,6 @@ class UserService:
     async def get_default_address(self, user_id: int) -> AddressDTO | None:
         address = await self.address_repo.get_default(user_id)
         return AddressDTO.model_validate(address) if address else None
-
 
     async def _ensure_user_exists(self, user_id: int) -> None:
         user = await self.user_repo.get_by_id(user_id)
