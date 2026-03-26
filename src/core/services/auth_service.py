@@ -33,9 +33,14 @@ class AuthService:
         session_token = secrets.token_urlsafe(48)
         permissions = user.permissions or []
         session_data = {
-            "user_id": user.id,
-            "role": user.role,
-            "permissions": permissions,
+            "data": {
+                "user_id": user.id,
+                "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "role": user.role,
+                "permissions": permissions,
+            }
         }
         await self.cache.set(
             f"{self.SESSION_PREFIX}{session_token}",

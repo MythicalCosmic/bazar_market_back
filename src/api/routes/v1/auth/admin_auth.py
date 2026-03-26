@@ -26,3 +26,14 @@ async def admin_logout(
     token = authorization[7:]
     await auth_service.logout(token)
     return {"detail": "Logged out"}
+
+@router.post('/me')
+async def admin_me(
+    authorization: str = Header(...),
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    if not authorization.startswith("Bearer "):
+        raise ForbiddenException("Invalid authorization header")
+    
+    token = authorization[7:]
+    await auth_service.

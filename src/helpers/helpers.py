@@ -1,9 +1,6 @@
 import hashlib
-from dotenv import load_dotenv
 import os
 from datetime import datetime, timezone
-
-load_dotenv(override=True)
 
 def return_releaseId() -> str:
     data = os.getenv('VERSION', 'version[1.0]')
